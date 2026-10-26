@@ -23,16 +23,16 @@ An **Anthropic API key**. Create one at <https://console.anthropic.com/settings/
 
 ## Put it on your phone
 
-The app is just static files, so it needs to be hosted somewhere over HTTPS. The easiest option is GitHub Pages (free for public repos):
+The app is just static files, so it needs to be hosted somewhere over HTTPS. This repo publishes it with GitHub Pages (free for public repos):
 
-1. Merge this branch into `main`.
-2. On GitHub, go to **Settings → Pages → Build and deployment → Source** and choose **GitHub Actions**.
-3. The *Deploy MacroTalk to GitHub Pages* workflow runs automatically. When it's done, the app is live at
+1. Every push to `main` that changes `macro-tracker/` runs the *Publish MacroTalk to gh-pages* workflow, which copies the app to the `gh-pages` branch.
+2. GitHub Pages serves that branch at
    `https://<your-username>.github.io/learning_git/`
-4. Open that link on your phone:
+   (If the site doesn't appear, go to **Settings → Pages** and set the source to *Deploy from a branch → `gh-pages` / root*.)
+3. Open that link on your phone:
    - **iPhone (Safari):** Share button → **Add to Home Screen**
    - **Android (Chrome):** ⋮ menu → **Add to Home screen** / **Install app**
-5. Open the app, paste your API key in **Settings**, and start logging.
+4. Open the app, paste your API key in **Settings**, and start logging.
 
 Other free static hosts (Netlify Drop, Cloudflare Pages, Vercel) also work. Just upload the `macro-tracker/` folder.
 
@@ -62,6 +62,7 @@ python3 -m http.server 8000
 | `app.js` | Storage, Claude tool loop, voice/photo input, rendering |
 | `sw.js` | Service worker for offline use and installability |
 | `manifest.webmanifest`, `icons/` | Home-screen app metadata |
+| `../.github/workflows/macro-tracker-publish.yml` | Publishes this folder to the `gh-pages` branch |
 
 ## Notes
 
