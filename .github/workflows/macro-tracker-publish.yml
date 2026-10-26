@@ -1,0 +1,28 @@
+name: Publish MacroTalk to gh-pages
+
+# Copies macro-tracker/ to the root of the gh-pages branch, which GitHub Pages
+# serves at https://<user>.github.io/<repo>/.
+on:
+  push:
+    branches: [main]
+    paths: ["macro-tracker/**", ".github/workflows/macro-tracker-publish.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Push macro-tracker/ to gh-pages
+        run: |
+          git subtree split --prefix macro-tracker -b gh-pages-build
+          git push --force origin gh-pages-build:gh-pages
