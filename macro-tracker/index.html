@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <title>MacroTalk</title>
+  <meta name="description" content="Talk to Claude to log food and track calories and macros.">
+  <meta name="theme-color" content="#0f1115">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MacroTalk">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="app">
+    <!-- TODAY -->
+    <section id="view-today" class="view active">
+      <header class="topbar">
+        <button class="icon-btn" id="prev-day" aria-label="Previous day">‹</button>
+        <h1 id="day-label">Today</h1>
+        <button class="icon-btn" id="next-day" aria-label="Next day">›</button>
+      </header>
+
+      <div class="card summary">
+        <div class="ring-wrap">
+          <svg viewBox="0 0 120 120" class="ring" aria-hidden="true">
+            <circle cx="60" cy="60" r="52" class="ring-bg"/>
+            <circle cx="60" cy="60" r="52" class="ring-fg" id="cal-ring"/>
+          </svg>
+          <div class="ring-center">
+            <div class="big" id="cal-left">0</div>
+            <div class="muted" id="cal-left-label">kcal left</div>
+          </div>
+        </div>
+        <div class="cal-line muted"><span id="cal-eaten">0</span> eaten · goal <span id="cal-goal">0</span></div>
+      </div>
+
+      <div class="macros">
+        <div class="card macro" data-macro="protein">
+          <div class="macro-val"><span class="v">0</span><span class="g">/0g</span></div>
+          <div class="bar"><i></i></div>
+          <div class="macro-name">Protein</div>
+        </div>
+        <div class="card macro" data-macro="carbs">
+          <div class="macro-val"><span class="v">0</span><span class="g">/0g</span></div>
+          <div class="bar"><i></i></div>
+          <div class="macro-name">Carbs</div>
+        </div>
+        <div class="card macro" data-macro="fat">
+          <div class="macro-val"><span class="v">0</span><span class="g">/0g</span></div>
+          <div class="bar"><i></i></div>
+          <div class="macro-name">Fat</div>
+        </div>
+        <div class="card macro" data-macro="fiber">
+          <div class="macro-val"><span class="v">0</span><span class="g">/0g</span></div>
+          <div class="bar"><i></i></div>
+          <div class="macro-name">Fiber</div>
+        </div>
+      </div>
+
+      <div id="entries"></div>
+      <p class="empty muted" id="entries-empty">Nothing logged yet. Tap <b>Chat</b> and tell Claude what you ate — or snap a photo.</p>
+    </section>
+
+    <!-- CHAT -->
+    <section id="view-chat" class="view">
+      <header class="topbar">
+        <span></span>
+        <h1>Chat with Claude</h1>
+        <button class="icon-btn small" id="new-chat" aria-label="New conversation" title="New conversation">⟲</button>
+      </header>
+      <div id="messages" aria-live="polite"></div>
+      <div id="pending-image" hidden>
+        <img alt="Attached photo">
+        <button class="icon-btn small" id="remove-image" aria-label="Remove photo">✕</button>
+      </div>
+      <form id="composer" autocomplete="off">
+        <label class="icon-btn" aria-label="Add photo" title="Add photo">
+          📷<input type="file" id="photo-input" accept="image/*" hidden>
+        </label>
+        <textarea id="input" rows="1" placeholder="What did you eat?"></textarea>
+        <button type="button" class="icon-btn" id="mic-btn" aria-label="Speak" title="Speak">🎤</button>
+        <button type="submit" class="send-btn" id="send-btn" aria-label="Send">↑</button>
+      </form>
+    </section>
+
+    <!-- HISTORY -->
+    <section id="view-history" class="view">
+      <header class="topbar"><span></span><h1>History</h1><span></span></header>
+      <div class="seg" id="range-seg">
+        <button data-days="7" class="on">7 days</button>
+        <button data-days="30">30 days</button>
+      </div>
+      <div class="card">
+        <div class="chart" id="chart"></div>
+      </div>
+      <div class="card" id="averages"></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="view-settings" class="view">
+      <header class="topbar"><span></span><h1>Settings</h1><span></span></header>
+      <form id="settings-form" class="card form">
+        <h2>Claude</h2>
+        <label>Anthropic API key
+          <input type="password" id="api-key" placeholder="sk-ant-..." autocomplete="off">
+        </label>
+        <p class="hint">Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. It's stored only on this device and sent only to Anthropic.</p>
+        <label>Model
+          <select id="model">
+            <option value="claude-opus-5-5">Claude Opus 5.5 (most accurate)</option>
+            <option value="claude-sonnet-5-5">Claude Sonnet 5.5 (balanced)</option>
+            <option value="claude-haiku-5-5">Claude Haiku 5.5 (cheapest)</option>
+          </select>
+        </label>
+        <label class="row"><input type="checkbox" id="speak"> Read Claude's replies aloud</label>
+
+        <h2>Daily goals</h2>
+        <div class="grid2">
+          <label>Calories<input type="number" inputmode="numeric" id="goal-calories" min="0"></label>
+          <label>Protein (g)<input type="number" inputmode="numeric" id="goal-protein" min="0"></label>
+          <label>Carbs (g)<input type="number" inputmode="numeric" id="goal-carbs" min="0"></label>
+          <label>Fat (g)<input type="number" inputmode="numeric" id="goal-fat" min="0"></label>
+          <label>Fiber (g)<input type="number" inputmode="numeric" id="goal-fiber" min="0"></label>
+        </div>
+        <p class="hint">Tip: ask Claude in chat — “I'm 32, male, 180 lb, 5'10", lifting 4x/week and want to lose fat. Set my goals.”</p>
+        <button type="submit" class="primary">Save</button>
+      </form>
+
+      <div class="card form">
+        <h2>Data</h2>
+        <button type="button" id="export-btn">Export data (JSON)</button>
+        <label class="file-btn">Import data<input type="file" id="import-input" accept="application/json" hidden></label>
+        <button type="button" id="reset-btn" class="danger">Delete all data</button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button data-view="today" class="on"><span>🍽️</span>Today</button>
+    <button data-view="chat"><span>💬</span>Chat</button>
+    <button data-view="history"><span>📈</span>History</button>
+    <button data-view="settings"><span>⚙️</span>Settings</button>
+  </nav>
+
+  <dialog id="edit-dialog">
+    <form method="dialog" id="edit-form" class="form">
+      <h2>Edit entry</h2>
+      <label>Food<input id="e-name" required></label>
+      <label>Amount<input id="e-quantity"></label>
+      <label>Meal
+        <select id="e-meal">
+          <option>breakfast</option><option>lunch</option><option>dinner</option><option>snack</option>
+        </select>
+      </label>
+      <div class="grid2">
+        <label>Calories<input type="number" step="any" inputmode="decimal" id="e-calories"></label>
+        <label>Protein (g)<input type="number" step="any" inputmode="decimal" id="e-protein"></label>
+        <label>Carbs (g)<input type="number" step="any" inputmode="decimal" id="e-carbs"></label>
+        <label>Fat (g)<input type="number" step="any" inputmode="decimal" id="e-fat"></label>
+        <label>Fiber (g)<input type="number" step="any" inputmode="decimal" id="e-fiber"></label>
+      </div>
+      <div class="dialog-actions">
+        <button value="delete" class="danger">Delete</button>
+        <span></span>
+        <button value="cancel">Cancel</button>
+        <button value="save" class="primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" role="status" hidden></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
